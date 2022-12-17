@@ -142,9 +142,9 @@ def voice_assistant():
             
             AI_response.join()
             print("Thread done")
-            time.sleep((message_length/5))
+            time.sleep((message_length/10))
             new_confidence = 0
-            
+            print("Listening again...")
         
             
         #print(new_confidence) 
@@ -171,7 +171,7 @@ def ASR_subroutine():
 
 
 def get_LLM_response(prompt):
-    message = requests.post("http://127.0.0.1:5000/openai", data=prompt)
+    message = requests.post("http://192.168.1.2:5000/openai", data=prompt)
     print(message.text)
     #print("Message is ", message)
 
