@@ -1,4 +1,3 @@
-#This would be the main file na magi-initialize ng 4 models and magko-call ng VAD
 import whisper
 import sounddevice as sd
 from scipy.io.wavfile import write
@@ -36,9 +35,12 @@ import queue
 import sys
 
 import time
-freq = 44100
 
-duration = 10
+from gtts import gTTS
+import os
+from flask import request, Response
+
+import requests
 q = queue.Queue
 
 #torch.hub.download_url_to_file('https://models.silero.ai/vad_models/en.wav', 'en_example.wav')
@@ -106,6 +108,10 @@ def voice_assistant():
     global count
     cooldown = 0
     count = 0
+
+    global message_length 
+    message_length = 0
+    print("Assistant is now on.")
     while True:
     
         audio_chunk = stream.read(num_samples)
@@ -126,21 +132,22 @@ def voice_assistant():
             cooldown-=1
 
         if(new_confidence > .90 and count < 1):
-            cooldown = 2
+            cooldown = 5
             print("Voice detected. Starting ASR Subroutine...")
             count+=1
             AI_response = threading.Thread(target=ASR_subroutine)
             AI_response.start()
             
             print("New Thread Made")
-            time.sleep(5)
+            
             AI_response.join()
             print("Thread done")
-            time.sleep(5)
+            time.sleep((message_length/5))
+            new_confidence = 0
             
         
             
-        print(new_confidence) 
+        #print(new_confidence) 
         #pp.update(new_confidence)
 
     print(voiced_confidences)
@@ -164,18 +171,23 @@ def ASR_subroutine():
 
 
 def get_LLM_response(prompt):
-    openai.api_key = ("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")
-    response = openai.Completion.create(
-        model="text-curie-001",
-        prompt=prompt,
-        max_tokens=7,
-        temperature=0
-    )
+    message = requests.post("http://127.0.0.1:5000/openai", data=prompt)
+    print(message.text)
+    #print("Message is ", message)
 
-    print(response["choices"][0]["text"])
+    message = message.text
     global count
 
+    global message_length
+    message_length = len(message)
     count -=1
+    TTS_response(message)
+
+def TTS_response(message):
+    
+    audio = gTTS(text=message, lang="en", slow=False)
+    audio.save("TTS.mp3")
+    os.system("TTS.mp3")
 
 
 voice_assistant()
